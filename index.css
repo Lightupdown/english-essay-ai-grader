@@ -1,0 +1,104 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer utilities {
+  .animate-spin-slow {
+    animation: spin 20s linear infinite;
+  }
+  
+  .animate-spin-slower {
+    animation: spin 30s linear infinite;
+  }
+  
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+  .text-shadow {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .text-shadow-lg {
+    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.glass-effect {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+}
+
+.card-enter {
+  animation: cardEnter 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes cardEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.feedback-highlight {
+  position: relative;
+  z-index: 10;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.feedback-highlight::before {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: currentColor;
+  border-radius: 2px;
+  opacity: 0.6;
+}
+
+.sparkle-effect {
+  animation: sparkle 1.5s ease-in-out infinite;
+}
+
+@keyframes sparkle {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+.scale-102 {
+  transform: scale(1.02);
+}
+
+.scale-105 {
+  transform: scale(1.05);
+}
+

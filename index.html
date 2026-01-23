@@ -1,0 +1,81 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 英语名师批改系统 | 专业版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --brand-indigo: #4f46e5;
+            --surface-bg: #f8fafc;
+        }
+        body {
+            font-family: 'Plus Jakarta Sans', 'Noto Sans SC', sans-serif;
+            background-color: var(--surface-bg);
+            color: #1e293b;
+            overflow-x: hidden;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.04);
+        }
+        .ai-gradient-bg {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        }
+        .ai-text-gradient {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        /* 自定义滚动条 */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #cbd5e1;
+        }
+        /* 1080p 适配优化 */
+        @media (min-width: 1920px) {
+            .container-1080p {
+                max-width: 1800px;
+                margin: 0 auto;
+            }
+        }
+        .hover-lift {
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .hover-lift:hover {
+            transform: translateY(-4px);
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "lucide-react": "https://esm.sh/lucide-react@^0.475.0",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react-router-dom": "https://esm.sh/react-router-dom@^7.12.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body>
+    <div id="root"></div>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>

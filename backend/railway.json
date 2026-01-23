@@ -1,0 +1,5 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "buildCommand": "npm install",
+  "startCommand": "npm start"
+}

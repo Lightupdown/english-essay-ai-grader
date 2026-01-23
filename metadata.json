@@ -1,0 +1,7 @@
+{
+  "name": "English Essay AI Grader",
+  "description": "An advanced AI-powered assistant for English teachers to analyze and grade student essays through image uploads with detailed grammar and vocabulary feedback.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
