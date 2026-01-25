@@ -247,9 +247,18 @@ useEffect(() => {
 ### Environment Configuration
 
 This project uses environment variables for API keys:
-- `GEMINI_API_KEY` - Google Gemini API key
-- Defined in `.env.local` (not committed to git)
-- Access via `process.env.GEMINI_API_KEY` in code
+
+**Backend (backend/.env):**
+- `PORT` - Server port (default: 5000)
+- `MONGODB_URI` - MongoDB connection string
+- `JWT_SECRET` - JWT secret for authentication
+- `ZHIPU_API_KEY` - Zhipu AI API key (智谱AI)
+- `DEEPSEEK_API_KEY` - DeepSeek API key
+
+**Frontend (.env.local):**
+- No API keys needed (all API calls go through backend)
+
+Access via `process.env.VARIABLE_NAME` in backend code.
 
 ### React Router
 

@@ -17,8 +17,8 @@ router.post('/process', auth, async (req, res) => {
       return res.status(400).json({ error: '图片不能为空' });
     }
 
-    // 验证 Base64 格式
-    if (!imageBase64.startsWith('data:image/')) {
+    // 验证 Base64 格式 - accept both with and without data:image prefix
+    if (!imageBase64.startsWith('data:image/') && !imageBase64.startsWith('iVBORw0KGgo') && !imageBase64.startsWith('/9j/')) {
       return res.status(400).json({ error: '无效的图片格式' });
     }
 

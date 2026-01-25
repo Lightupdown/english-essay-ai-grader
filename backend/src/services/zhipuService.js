@@ -1,9 +1,13 @@
 const axios = require('axios');
 
-const extractTextFromImage = async (imageBase64) => {
+const API_URL = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
+
+const extractTextFromImage = async (base64Image) => {
   try {
+    console.log('开始OCR文字提取...');
+
     const response = await axios.post(
-      'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+      API_URL,
       {
         model: 'glm-4.6v',
         messages: [
@@ -11,14 +15,14 @@ const extractTextFromImage = async (imageBase64) => {
             role: 'user',
             content: [
               {
-                type: 'text',
-                text: '请提取图片中的所有英文文本，包括标题、正文、标点符号等。只返回提取的文本内容，不要添加任何解释或说明。'
-              },
-              {
                 type: 'image_url',
                 image_url: {
-                  url: imageBase64
+                  url: `data:image/jpeg;base64,${base64Image}`
                 }
+              },
+              {
+                type: 'text',
+                text: '请仔细识别这张图片中的英文文字内容。\n\n要求：\n1. 只返回识别到的英文文字，不要添加任何解释、注释或说明\n2. 保持原文的段落结构和换行\n3. 准确识别每个单词，包括大小写和标点符号\n4. 如果遇到无法识别的单词，用[?]标记\n5. 如果图像模糊，尽力识别，不要编造内容\n\n直接输出识别结果，不要使用任何格式标记。'
               }
             ]
           }
@@ -31,15 +35,27 @@ const extractTextFromImage = async (imageBase64) => {
           'Authorization': `Bearer ${process.env.ZHIPU_API_KEY}`,
           'Content-Type': 'application/json'
         },
-        timeout: 60000
+        timeout: 120000
       }
     );
 
-    const text = response.data.choices[0].message.content;
-    return text;
+    const content = response.data.choices?.[0]?.message?.content || '';
+
+    console.log('OCR提取完成，文字长度:', content.length);
+    console.log('OCR结果预览:', content.substring(0, 200));
+
+    return content.trim();
   } catch (error) {
-    console.error('智谱AI OCR 调用失败:', error.message);
-    throw new Error('OCR 识别失败，请检查图片质量或稍后重试');
+    if (error.response) {
+      console.error('智谱AI OCR 调用失败:', error.response.status, error.response.data);
+      throw new Error(`OCR请求失败: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+    } else if (error.request) {
+      console.error('智谱AI OCR 请求超时:', error.message);
+      throw new Error('OCR识别超时，请检查网络后重试');
+    } else {
+      console.error('智谱AI OCR 调用失败:', error.message);
+      throw new Error('OCR识别失败，请检查图片质量或稍后重试');
+    }
   }
 };
 
