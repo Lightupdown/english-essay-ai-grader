@@ -3,18 +3,30 @@ const auth = require('../middleware/auth');
 const Essay = require('../models/Essay');
 const zhipuService = require('../services/zhipuService');
 const deepseekService = require('../services/deepseekService');
+const { validateGradeLevel } = require('../config/grades');
 
 const router = express.Router();
 
 // 处理作文（OCR + 分析）
 router.post('/process', auth, async (req, res) => {
   try {
-    const { imageBase64 } = req.body;
+    const { imageBase64, gradeLevel } = req.body;
     const userId = req.user.id;
 
     // 验证输入
     if (!imageBase64) {
       return res.status(400).json({ error: '图片不能为空' });
+    }
+
+    if (!gradeLevel) {
+      return res.status(400).json({ error: '年级程度不能为空' });
+    }
+
+    // 验证年级参数
+    if (!validateGradeLevel(gradeLevel)) {
+      return res.status(400).json({ 
+        error: '无效的年级程度。有效值：primary, junior, senior, cet4, cet6, postgraduate, other' 
+      });
     }
 
     // 验证 Base64 格式 - accept both with and without data:image prefix
@@ -29,24 +41,29 @@ router.post('/process', auth, async (req, res) => {
       return res.status(400).json({ error: '未能从图片中提取到文本，请检查图片质量' });
     }
 
-    // 2. 调用 DeepSeek 分析
-    const analysis = await deepseekService.analyzeText(text);
+    // 2. 调用 DeepSeek 分析（传递 gradeLevel）
+    const analysis = await deepseekService.analyzeText(text, gradeLevel);
 
     // 3. 保存到数据库
     const essay = new Essay({
       userId,
       imageBase64,
       extractedText: text,
+      gradeLevel,
       score: analysis.score,
       feedback: analysis.feedback
     });
     await essay.save();
 
     res.json({
-      essayId: essay._id,
-      score: analysis.score,
-      feedback: analysis.feedback,
-      extractedText: text
+      success: true,
+      data: {
+        essayId: essay._id,
+        gradeLevel: analysis.gradeLevel,
+        score: analysis.score,
+        feedback: analysis.feedback,
+        extractedText: text
+      }
     });
   } catch (error) {
     console.error('作文处理失败:', error);

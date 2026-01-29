@@ -1,56 +1,49 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
-import { User } from '../types';
-import { login as authLogin, register as authRegister, getProfile, logout as authLogout } from '../services/auth';
 
 interface AuthContextType {
-  user: User | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name?: string) => Promise<void>;
-  logout: () => void;
   loading: boolean;
-  isAuthenticated: boolean;
-  isTrial: boolean;
-  trialCount: number;
-  trialLimit: number;
   canAnalyze: boolean;
-  refreshAuth: () => Promise<void>;
+  remainingAttempts: number;
+  dailyLimit: number;
+  recordAttempt: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const TRIAL_LIMIT = 3;
-const TRIAL_KEY = 'trial_essays';
+const DAILY_LIMIT = 3;
+const ATTEMPTS_KEY = 'daily_attempts';
+const LAST_DATE_KEY = 'last_attempt_date';
 
-// 试用模式工具函数
-const getTrialEssays = (): string[] => {
-  const data = localStorage.getItem(TRIAL_KEY);
-  if (!data) return [];
-  try {
-    return JSON.parse(data);
-  } catch {
-    return [];
+// 获取今天的日期字符串
+const getTodayString = (): string => {
+  return new Date().toISOString().split('T')[0];
+};
+
+// 获取今天的尝试次数
+const getTodayAttempts = (): number => {
+  const lastDate = localStorage.getItem(LAST_DATE_KEY);
+  const today = getTodayString();
+  
+  // 如果不是今天，重置计数
+  if (lastDate !== today) {
+    localStorage.setItem(LAST_DATE_KEY, today);
+    localStorage.setItem(ATTEMPTS_KEY, '0');
+    return 0;
   }
+  
+  const attempts = localStorage.getItem(ATTEMPTS_KEY);
+  return attempts ? parseInt(attempts, 10) : 0;
 };
 
-const getTrialCount = (): number => {
-  return getTrialEssays().length;
+// 记录一次尝试
+const recordAttempt = (): void => {
+  const currentAttempts = getTodayAttempts();
+  localStorage.setItem(ATTEMPTS_KEY, (currentAttempts + 1).toString());
 };
 
-const canAnalyzeTrial = (): boolean => {
-  return getTrialCount() < TRIAL_LIMIT;
-};
-
-const recordTrialEssay = (essayId: string) => {
-  const essays = getTrialEssays();
-  if (!essays.find(e => e === essayId)) {
-    essays.unshift(essayId);
-    // 只保留最近 TRIAL_LIMIT 篇
-    localStorage.setItem(TRIAL_KEY, JSON.stringify(essays.slice(0, TRIAL_LIMIT)));
-  }
-};
-
-const clearTrialEssays = () => {
-  localStorage.removeItem(TRIAL_KEY);
+// 检查是否还可以分析
+const canAnalyzeToday = (): boolean => {
+  return getTodayAttempts() < DAILY_LIMIT;
 };
 
 interface AuthProviderProps {
@@ -58,92 +51,34 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [trialCount, setTrialCount] = useState(getTrialCount());
+  const [loading, setLoading] = useState(false);
+  const [attempts, setAttempts] = useState(getTodayAttempts());
 
-  const isAuthenticated = !!user;
-  const isTrial = !isAuthenticated;
-  const canAnalyze = isAuthenticated || canAnalyzeTrial();
+  const canAnalyze = canAnalyzeToday();
+  const remainingAttempts = Math.max(0, DAILY_LIMIT - attempts);
 
-  const refreshAuth = useCallback(async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setUser(null);
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const userData = await getProfile();
-      setUser(userData);
-    } catch (error) {
-      console.error('Token验证失败:', error);
-      localStorage.removeItem('token');
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
+  const handleRecordAttempt = useCallback(() => {
+    recordAttempt();
+    setAttempts(getTodayAttempts());
   }, []);
 
+  // 监听 storage 变化（用于多标签页同步）
   useEffect(() => {
-    refreshAuth();
-  }, [refreshAuth]);
-
-  useEffect(() => {
-    // 监听storage变化，更新试用计数
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === TRIAL_KEY) {
-        setTrialCount(getTrialCount());
+      if (e.key === ATTEMPTS_KEY || e.key === LAST_DATE_KEY) {
+        setAttempts(getTodayAttempts());
       }
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  const login = async (email: string, password: string) => {
-    setLoading(true);
-    try {
-      const { user: userData } = await authLogin(email, password);
-      setUser(userData);
-      // 登录后清除试用数据（可选）
-      // clearTrialEssays();
-    } catch (error) {
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const register = async (email: string, password: string, name?: string) => {
-    setLoading(true);
-    try {
-      const { user: userData } = await authRegister(email, password, name);
-      setUser(userData);
-    } catch (error) {
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const logout = () => {
-    authLogout();
-    setUser(null);
-  };
-
   const value: AuthContextType = {
-    user,
-    login,
-    register,
-    logout,
     loading,
-    isAuthenticated,
-    isTrial,
-    trialCount,
-    trialLimit: TRIAL_LIMIT,
     canAnalyze,
-    refreshAuth,
+    remainingAttempts,
+    dailyLimit: DAILY_LIMIT,
+    recordAttempt: handleRecordAttempt,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -157,11 +92,10 @@ export const useAuth = (): AuthContextType => {
   return context;
 };
 
-// 导出试用模式工具函数
-export const trialUtils = {
-  getTrialCount,
-  canAnalyzeTrial,
-  recordTrialEssay,
-  clearTrialEssays,
-  TRIAL_LIMIT,
+// 导出工具函数
+export const attemptUtils = {
+  getTodayAttempts,
+  canAnalyzeToday,
+  recordAttempt,
+  DAILY_LIMIT,
 };

@@ -1,16 +1,17 @@
 import api from './api';
-import { Essay } from '../types';
+import { Essay, GradeLevel } from '../types';
 
 export interface ProcessResponse {
   essayId: string;
+  gradeLevel: GradeLevel;
   score: number;
   feedback: any;
   extractedText: string;
 }
 
-export const processEssay = async (imageBase64: string): Promise<ProcessResponse> => {
-  const response = await api.post('/essay/process', { imageBase64 });
-  return response.data;
+export const processEssay = async (imageBase64: string, gradeLevel: GradeLevel): Promise<ProcessResponse> => {
+  const response = await api.post('/essay/process', { imageBase64, gradeLevel });
+  return response.data.data;
 };
 
 export const getHistory = async (): Promise<Essay[]> => {

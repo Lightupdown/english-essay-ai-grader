@@ -16,12 +16,15 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+let isRedirecting = false;
+
 // 响应拦截器：统一错误处理
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Token 过期，清除并跳转到登录页
+    if (error.response?.status === 401 && !isRedirecting) {
+      // Token 过期，清除并跳转到登录页（只执行一次）
+      isRedirecting = true;
       localStorage.removeItem('token');
       window.location.href = '/login';
     }

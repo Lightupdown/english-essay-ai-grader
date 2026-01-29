@@ -6,6 +6,8 @@ const connectDB = require('./config/database');
 const authRoutes = require('./routes/auth');
 const essayRoutes = require('./routes/essay');
 const aiRoutes = require('./routes/ai');
+const feedbackRoutes = require('./routes/feedback');
+const comparisonRoutes = require('./routes/comparison');
 
 const app = express();
 
@@ -22,6 +24,8 @@ connectDB();
 app.use('/api/auth', authRoutes);
 app.use('/api/essay', essayRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/feedback', feedbackRoutes);
+app.use('/api/comparison', comparisonRoutes);
 
 // 健康检查
 app.get('/health', (req, res) => {

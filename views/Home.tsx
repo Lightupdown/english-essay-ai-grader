@@ -6,7 +6,6 @@ import {
   Wand2, 
   Trash2, 
   ChevronRight, 
-  Clock, 
   X, 
   ChevronLeft,
   Search,
@@ -16,77 +15,38 @@ import {
   Calendar,
   Award,
   Plus,
-  AlertCircle,
-  Loader2
+  AlertCircle
 } from 'lucide-react';
 import Header from '../components/Header';
-import { EssayRecord, Essay } from '../types';
+import { EssayRecord, GradeLevel } from '../types';
 import * as storage from '../utils/storage';
-import { useAuth, trialUtils } from '../contexts/AuthContext';
-import { processEssay as processEssayApi, getHistory as getHistoryApi } from '../services/essay';
+import { compressImage } from '../utils/imageCompression';
+import { useAuth } from '../contexts/AuthContext';
+
 
 const ITEMS_PER_PAGE = 8;
 
 const Home: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [selectedGrade, setSelectedGrade] = useState<GradeLevel | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [localHistory, setLocalHistory] = useState<EssayRecord[]>([]);
-  const [serverHistory, setServerHistory] = useState<Essay[]>([]);
-  const [loadingHistory, setLoadingHistory] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
-  const { user, isTrial, canAnalyze, trialCount, trialLimit } = useAuth();
+  const { canAnalyze, remainingAttempts, dailyLimit, recordAttempt } = useAuth();
 
   // 加载本地历史记录
   useEffect(() => {
     setLocalHistory(storage.getEssays());
   }, []);
 
-  // 加载服务器历史记录（如果已登录）
-  useEffect(() => {
-    if (user) {
-      setLoadingHistory(true);
-      getHistoryApi()
-        .then(essays => setServerHistory(essays))
-        .catch(err => console.error('加载服务器历史失败:', err))
-        .finally(() => setLoadingHistory(false));
-    } else {
-      setServerHistory([]);
-    }
-  }, [user]);
-
-  // 转换服务器历史记录为 EssayRecord 格式以便显示
-  const convertedServerHistory = useMemo<EssayRecord[]>(() => {
-    return serverHistory.map(essay => {
-      const feedback = essay.feedback;
-      const result = {
-        essayId: essay._id,
-        totalScore: essay.score,
-        grammarScore: typeof feedback === 'object' && feedback !== null ? feedback.grammarScore : essay.score,
-        vocabScore: typeof feedback === 'object' && feedback !== null ? feedback.vocabScore : essay.score,
-        feedbacks: typeof feedback === 'object' && feedback !== null ? feedback.feedbacks || [] : [],
-        rawText: typeof feedback === 'object' && feedback !== null ? feedback.rawText || essay.extractedText : essay.extractedText,
-        commentary: typeof feedback === 'object' && feedback !== null ? feedback.commentary || '已分析' : '已分析'
-      };
-      return {
-        id: essay._id,
-        imageName: `服务器作文 ${essay._id.slice(-4)}`,
-        imagePreviewUrl: '', // 服务器记录没有预览图
-        createdAt: new Date(essay.createdAt).getTime(),
-        status: 'analyzed' as const,
-        result,
-        rawText: essay.extractedText,
-        isTrial: false
-      };
-    });
-  }, [serverHistory]);
-
-  const history = isTrial ? localHistory : convertedServerHistory;
+  // 只使用本地历史记录（移除了登录功能）
+  const history = localHistory;
 
   const filteredHistory = useMemo(() => {
     return history.filter(item => 
@@ -100,19 +60,43 @@ const Home: React.FC = () => {
     return filteredHistory.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredHistory, currentPage]);
 
-  const handleFileChange = (file: File) => {
+  const handleFileChange = async (file: File) => {
     if (!file.type.startsWith('image/')) return alert('请上传有效的图片文件');
-    setSelectedFile(file);
-    setPreviewUrl(URL.createObjectURL(file));
+    
+    // 清除之前的选择，允许重新上传
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    
+    // 使用 setTimeout 确保状态更新后再设置新文件
+    setTimeout(async () => {
+      setSelectedFile(file);
+      // 压缩图片后存储，减少 localStorage 占用
+      try {
+        const compressedUrl = await compressImage(file, {
+          maxWidth: 400,
+          maxHeight: 600,
+          quality: 0.7,
+          type: 'image/jpeg'
+        });
+        setPreviewUrl(compressedUrl);
+      } catch (error) {
+        console.error('图片压缩失败:', error);
+        // 如果压缩失败，使用原始方式
+        setPreviewUrl(URL.createObjectURL(file));
+      }
+    }, 0);
   };
 
   const startAnalysis = async () => {
     if (!selectedFile || !previewUrl) return;
+    if (!selectedGrade) {
+      alert('请先选择英语水平！');
+      return;
+    }
     
     // 检查是否还有分析次数
     if (!canAnalyze) {
-      alert(`试用模式仅支持分析 ${trialLimit} 篇文章。您已分析 ${trialCount} 篇，请登录后继续使用。`);
-      navigate('/login');
+      alert(`今日分析次数已用完（${dailyLimit}次/天），请明天再来！`);
       return;
     }
     
@@ -127,8 +111,7 @@ const Home: React.FC = () => {
       
       const id = Date.now().toString();
       
-      if (isTrial) {
-        // 试用模式：直接调用AI路由，存储在本地
+      // 分析流程：直接调用AI路由，存储在本地
         // Step 1: OCR识别
         const ocrResponse = await fetch('http://localhost:5000/api/ai/ocr', {
           method: 'POST',
@@ -157,8 +140,8 @@ const Home: React.FC = () => {
         storage.saveEssay(newRecord);
         setLocalHistory(storage.getEssays());
         
-        // 记录试用文章
-        trialUtils.recordTrialEssay(id);
+        // 记录分析次数
+        recordAttempt();
         
         // Step 3: 立即跳转到结果页（显示OCR内容）
         navigate(`/result/${id}`);
@@ -167,14 +150,17 @@ const Home: React.FC = () => {
         fetch('http://localhost:5000/api/ai/analyze', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: rawText, essayId: id })
+          body: JSON.stringify({ text: rawText, essayId: id, gradeLevel: selectedGrade })
         })
           .then(res => res.json())
           .then(result => {
             // 分析完成后更新状态
             storage.updateEssay(id, {
               status: 'analyzed',
-              result
+              result: {
+                ...result,
+                gradeLevel: selectedGrade
+              }
             });
             setLocalHistory(storage.getEssays());
           })
@@ -185,6 +171,7 @@ const Home: React.FC = () => {
               status: 'analyzed',
               result: {
                 essayId: id,
+                gradeLevel: selectedGrade,
                 totalScore: 0,
                 grammarScore: 0,
                 vocabScore: 0,
@@ -195,44 +182,6 @@ const Home: React.FC = () => {
             });
             setLocalHistory(storage.getEssays());
           });
-      } else {
-        // 已登录模式：调用后端API，存储在服务器
-        try {
-          const result = await processEssayApi(base64);
-          const feedback = result.feedback;
-          
-          // 创建本地记录用于显示（使用服务器返回的完整分析数据）
-          const newRecord: EssayRecord = {
-            id: result.essayId,
-            imageName: selectedFile.name,
-            imagePreviewUrl: previewUrl,
-            createdAt: Date.now(),
-            status: 'analyzed',
-            result: {
-              essayId: result.essayId,
-              totalScore: result.score,
-              grammarScore: typeof feedback === 'object' && feedback !== null ? feedback.grammarScore : result.score,
-              vocabScore: typeof feedback === 'object' && feedback !== null ? feedback.vocabScore : result.score,
-              feedbacks: typeof feedback === 'object' && feedback !== null ? feedback.feedbacks || [] : [],
-              rawText: typeof feedback === 'object' && feedback !== null ? feedback.rawText || result.extractedText : result.extractedText,
-              commentary: typeof feedback === 'object' && feedback !== null ? feedback.commentary || '已分析' : '已分析'
-            },
-            rawText: result.extractedText,
-            isTrial: false
-          };
-          storage.saveEssay(newRecord); // 可选：缓存到本地
-          setLocalHistory(storage.getEssays());
-          
-          // 刷新服务器历史记录
-          const essays = await getHistoryApi();
-          setServerHistory(essays);
-          
-          // 跳转到结果页
-          navigate(`/result/${result.essayId}`);
-        } catch (error: any) {
-          throw new Error(error.response?.data?.error || '作文处理失败');
-        }
-      }
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : '分析遇到了问题，请检查网络后重试';
       alert(errorMessage);
@@ -255,7 +204,7 @@ const Home: React.FC = () => {
 
   return (
     <div className="flex-1 bg-[#f8fafc] min-h-screen">
-      <Header title="AI 英语名师批改系统" subTitle="专业的智能化英语作文诊断平台" />
+      <Header title="AI 英语名师批改系统" subTitle="测试版 - 仅供本校师生试用" />
       
       <main className="container-1080p px-4 md:px-8 py-6 md:py-10">
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 md:gap-12">
@@ -274,16 +223,38 @@ const Home: React.FC = () => {
                   </div>
                   <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">上传新作文</h2>
                 </div>
-                <p className="text-slate-500 text-xs md:text-sm mb-6 md:mb-12 font-medium leading-relaxed">数字化您的批改流程，通过 AI 技术实现 24/7 全天候的专业英语作文反馈。</p>
+                <p className="text-slate-500 text-xs md:text-sm mb-4 md:mb-6 font-medium leading-relaxed">数字化您的批改流程，通过 AI 技术实现 24/7 全天候的专业英语作文反馈。</p>
+
+                {/* 年级选择器 */}
+                <div className="mb-4 md:mb-6">
+                  <label className="block text-xs md:text-sm font-bold text-slate-700 mb-2 md:mb-3">
+                    选择英语水平
+                  </label>
+                  <select
+                    value={selectedGrade || ''}
+                    onChange={(e) => setSelectedGrade(e.target.value as GradeLevel)}
+                    className="w-full px-3 md:px-4 py-2 md:py-3 text-sm md:text-base border-2 border-slate-200 rounded-xl md:rounded-2xl focus:ring-3 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white font-medium"
+                    required
+                  >
+                    <option value="">请选择...</option>
+                    <option value="primary">小学英语 - 基础语法、简单词汇</option>
+                    <option value="junior">初中英语 - 复合句、段落结构</option>
+                    <option value="senior">高中英语 - 复杂句型、高级词汇</option>
+                    <option value="cet4">大学四级 - 段落连贯、学术词汇</option>
+                    <option value="cet6">大学六级 - 复杂论证、批判思维</option>
+                    <option value="postgraduate">研究生英语 - 学术写作、专业表达</option>
+                    <option value="other">其他水平 - 自定义水平</option>
+                  </select>
+                </div>
 
                 <div 
-                  className={`border-2 border-dashed rounded-2xl md:rounded-[2.5rem] p-6 md:p-10 flex flex-col items-center justify-center text-center transition-all min-h-[300px] md:min-h-[460px] relative overflow-hidden bg-white/50
+                  className={`border-2 border-dashed rounded-2xl md:rounded-[2.5rem] p-6 md:p-10 flex flex-col items-center justify-center text-center transition-all min-h-[260px] md:min-h-[420px] relative overflow-hidden bg-white/50
                     ${dragActive ? 'border-indigo-500 bg-indigo-50/80 scale-[0.98]' : 'border-slate-200 hover:border-indigo-400 hover:bg-slate-50/80'}`}
                   onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
                   onDragLeave={() => setDragActive(false)}
                   onDrop={(e) => { e.preventDefault(); setDragActive(false); if(e.dataTransfer.files[0]) handleFileChange(e.dataTransfer.files[0]); }}
                 >
-                  <input type="file" ref={fileInputRef} onChange={(e) => e.target.files && handleFileChange(e.target.files[0])} className="hidden" accept="image/*" />
+                  <input type="file" ref={fileInputRef} onChange={(e) => { if (e.target.files && e.target.files[0]) { handleFileChange(e.target.files[0]); e.target.value = ''; } }} className="hidden" accept="image/*" />
                    
                   {!previewUrl ? (
                     <div className="cursor-pointer group/upload" onClick={() => fileInputRef.current?.click()}>
@@ -339,7 +310,7 @@ const Home: React.FC = () => {
                 <p className="text-slate-400 text-sm md:text-base font-medium ml-1">共存储了 {history.length} 篇作文的专家级诊断报告</p>
               </div>
               <div className="relative group w-full md:w-auto">
-                <Search className="absolute left-4 md:left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors" size={18} className="md:size-5" />
+                <Search className="absolute left-4 md:left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors md:size-5" size={18} />
                 <input 
                   type="text" 
                   placeholder="快速查找批改报告..." 
