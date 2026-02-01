@@ -168,13 +168,29 @@ export interface ComparisonConfig {
   essayId?: string;                 // 关联的作文ID（可选）
 }
 
+// 推荐词汇项
+export interface VocabularyItem {
+  word: string;                     // 英文单词
+  translation: string;              // 中文翻译（简明准确）
+  partOfSpeech: string;             // 词性（n. v. adj. adv. 等）
+  context?: string;                 // 使用语境/例句（可选）
+}
+
+// 推荐句型项
+export interface StructureItem {
+  structure: string;                // 英文句型
+  translation: string;              // 中文翻译
+  usage?: string;                   // 使用场景说明（可选）
+}
+
 // 范文结果
 export interface ModelEssay {
-  text: string;                     // 范文内容
+  text: string;                     // 范文内容（英文）
+  translation: string;              // 范文中文翻译
   highlights: string[];             // 亮点说明
   improvements: string[];           // 相比原文的改进点
-  vocabulary: string[];             // 推荐词汇
-  structures: string[];             // 推荐句型
+  vocabulary: VocabularyItem[];     // 推荐词汇（带翻译和词性）
+  structures: StructureItem[];      // 推荐句型（带翻译）
 }
 
 // 同题对比记录

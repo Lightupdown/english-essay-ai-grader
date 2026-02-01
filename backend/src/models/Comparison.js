@@ -21,10 +21,20 @@ const comparisonSchema = new mongoose.Schema({
   },
   modelEssay: {
     text: { type: String, required: true },
+    translation: { type: String, default: '' },
     highlights: [{ type: String }],
     improvements: [{ type: String }],
-    vocabulary: [{ type: String }],
-    structures: [{ type: String }]
+    vocabulary: [{
+      word: { type: String, required: true },
+      translation: { type: String, required: true },
+      partOfSpeech: { type: String, required: true },
+      context: { type: String }
+    }],
+    structures: [{
+      structure: { type: String, required: true },
+      translation: { type: String, required: true },
+      usage: { type: String }
+    }]
   },
   createdAt: {
     type: Date,

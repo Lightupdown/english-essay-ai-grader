@@ -115,7 +115,7 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
             <label className="block text-sm font-bold text-slate-700 mb-3">
               作文题目
             </label>
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <input
                 type="text"
                 value={topic}
@@ -127,7 +127,7 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
               <button
                 onClick={handlePredictTopic}
                 disabled={isPredicting || !originalText || isLoading}
-                className="px-4 py-3 bg-indigo-50 text-indigo-600 rounded-xl font-bold text-sm hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 whitespace-nowrap"
+                className="px-4 py-3 bg-indigo-50 text-indigo-600 rounded-xl font-bold text-sm hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
               >
                 {isPredicting ? (
                   <>
@@ -137,7 +137,8 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                 ) : (
                   <>
                     <Wand2 size={16} />
-                    自动预测
+                    <span className="hidden sm:inline">自动预测</span>
+                    <span className="sm:hidden">预测</span>
                   </>
                 )}
               </button>
@@ -256,53 +257,53 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
             <label className="block text-sm font-bold text-slate-700 mb-3">
               写作风格
             </label>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
               <button
                 onClick={() => setStyle('academic')}
                 disabled={isLoading}
-                className={`p-3 rounded-xl border-2 text-center transition-all ${
+                className={`p-2 sm:p-3 rounded-xl border-2 text-center transition-all ${
                   style === 'academic'
                     ? 'border-indigo-500 bg-indigo-50'
                     : 'border-slate-200 hover:border-indigo-300'
                 }`}
               >
-                <GraduationCap size={20} className={`mx-auto mb-1 ${style === 'academic' ? 'text-indigo-600' : 'text-slate-400'}`} />
-                <span className={`text-xs font-bold block ${style === 'academic' ? 'text-indigo-900' : 'text-slate-700'}`}>
+                <GraduationCap size={18} className={`mx-auto mb-1 sm:size-5 ${style === 'academic' ? 'text-indigo-600' : 'text-slate-400'}`} />
+                <span className={`text-[11px] sm:text-xs font-bold block ${style === 'academic' ? 'text-indigo-900' : 'text-slate-700'}`}>
                   学术
                 </span>
-                <span className="text-[10px] text-slate-400 block mt-1">正式、客观</span>
+                <span className="text-[9px] sm:text-[10px] text-slate-400 block mt-0.5 sm:mt-1">正式客观</span>
               </button>
 
               <button
                 onClick={() => setStyle('narrative')}
                 disabled={isLoading}
-                className={`p-3 rounded-xl border-2 text-center transition-all ${
+                className={`p-2 sm:p-3 rounded-xl border-2 text-center transition-all ${
                   style === 'narrative'
                     ? 'border-indigo-500 bg-indigo-50'
                     : 'border-slate-200 hover:border-indigo-300'
                 }`}
               >
-                <MessageSquare size={20} className={`mx-auto mb-1 ${style === 'narrative' ? 'text-indigo-600' : 'text-slate-400'}`} />
-                <span className={`text-xs font-bold block ${style === 'narrative' ? 'text-indigo-900' : 'text-slate-700'}`}>
+                <MessageSquare size={18} className={`mx-auto mb-1 sm:size-5 ${style === 'narrative' ? 'text-indigo-600' : 'text-slate-400'}`} />
+                <span className={`text-[11px] sm:text-xs font-bold block ${style === 'narrative' ? 'text-indigo-900' : 'text-slate-700'}`}>
                   叙事
                 </span>
-                <span className="text-[10px] text-slate-400 block mt-1">生动、情感丰富</span>
+                <span className="text-[9px] sm:text-[10px] text-slate-400 block mt-0.5 sm:mt-1">情感丰富</span>
               </button>
 
               <button
                 onClick={() => setStyle('argumentative')}
                 disabled={isLoading}
-                className={`p-3 rounded-xl border-2 text-center transition-all ${
+                className={`p-2 sm:p-3 rounded-xl border-2 text-center transition-all ${
                   style === 'argumentative'
                     ? 'border-indigo-500 bg-indigo-50'
                     : 'border-slate-200 hover:border-indigo-300'
                 }`}
               >
-                <BookOpen size={20} className={`mx-auto mb-1 ${style === 'argumentative' ? 'text-indigo-600' : 'text-slate-400'}`} />
-                <span className={`text-xs font-bold block ${style === 'argumentative' ? 'text-indigo-900' : 'text-slate-700'}`}>
+                <BookOpen size={18} className={`mx-auto mb-1 sm:size-5 ${style === 'argumentative' ? 'text-indigo-600' : 'text-slate-400'}`} />
+                <span className={`text-[11px] sm:text-xs font-bold block ${style === 'argumentative' ? 'text-indigo-900' : 'text-slate-700'}`}>
                   议论
                 </span>
-                <span className="text-[10px] text-slate-400 block mt-1">逻辑严密</span>
+                <span className="text-[9px] sm:text-[10px] text-slate-400 block mt-0.5 sm:mt-1">逻辑严密</span>
               </button>
             </div>
           </div>

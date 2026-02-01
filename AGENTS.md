@@ -14,6 +14,23 @@ npm run preview         # Preview production build
 ### Testing
 This project currently has no test framework configured. Before adding tests, consult with the project maintainer about the preferred testing approach (Vitest, Jest, etc.).
 
+## Testing Protocol (Self-Healing Mode)
+
+After completing any frontend code modifications, you MUST:
+
+1. **Start Dev Server**: If not running, execute `npm run dev` (or equivalent command)
+2. **Access & Test**: Use `playwright_navigate` to visit http://localhost:3001
+3. **Check for Errors**:
+   - Use `playwright_console_messages` to retrieve browser console errors
+   - Use `playwright_screenshot` to capture current state
+4. **Auto-Fix**:
+   - If errors are found (red console output), analyze the error message
+   - Locate the specific file and make fixes
+   - After fixing, re-execute steps 2-3 until console has no errors
+5. **Report Results**: Briefly describe the testing process and fixes applied
+
+Note: Maximum 3 loops. If still failing, pause and report to the user.
+
 ### Code Quality
 No linting or type checking commands are currently configured. Agents should:
 - Run `tsc --noEmit` manually to check TypeScript types before committing

@@ -11,6 +11,13 @@ export default defineConfig({
     watch: {
       usePolling: true,
     },
+    // Proxy API requests to backend
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
+    },
   },
   plugins: [react()],
   resolve: {

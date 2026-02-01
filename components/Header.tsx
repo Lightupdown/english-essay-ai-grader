@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Share2, Sparkles, MessageSquare, Menu, X } from 'lucide-react';
+import { ArrowLeft, Share2, Sparkles, MessageSquare, Menu, X, History } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import FeedbackModal from './FeedbackModal';
@@ -23,18 +23,11 @@ const Header: React.FC<HeaderProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
 
-  // 临时：重置试用次数（测试用）
-  const resetAttempts = () => {
-    localStorage.removeItem('daily_attempts');
-    localStorage.removeItem('last_attempt_date');
-    window.location.reload();
-  };
-
   return (
     <>
       <nav className="sticky top-0 z-40 glass-panel border-b border-gray-100 px-4 md:px-6 py-3 md:py-4 backdrop-blur-sm bg-white/80">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3 md:gap-6">
+          <div className="flex items-center gap-2 md:gap-6">
             {showBack ? (
               <button 
                 onClick={() => navigate(-1)}
@@ -47,12 +40,12 @@ const Header: React.FC<HeaderProps> = ({
                 <Sparkles size={18} className="text-white" />
               </div>
             )}
-            <div className="hidden md:block">
-              <h1 className="text-lg md:text-xl font-bold tracking-tight text-gray-900 flex items-center gap-2">
-                {title}
-                {!showBack && <span className="text-[10px] font-bold px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded uppercase">测试版</span>}
+            <div>
+              <h1 className="text-sm md:text-xl font-bold tracking-tight text-gray-900 flex items-center gap-1.5 md:gap-2">
+                <span className="max-w-[140px] md:max-w-none truncate">{title}</span>
+                {!showBack && <span className="text-[9px] md:text-[10px] font-bold px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded uppercase shrink-0">测试版</span>}
               </h1>
-              {subTitle && <p className="text-xs text-gray-500 font-medium mt-0.5">{subTitle}</p>}
+              {subTitle && <p className="hidden md:block text-xs text-gray-500 font-medium mt-0.5">{subTitle}</p>}
             </div>
           </div>
           
@@ -63,6 +56,15 @@ const Header: React.FC<HeaderProps> = ({
                 <span>今日剩余: {remainingAttempts}/{dailyLimit} 次</span>
               </div>
               
+              {/* 历史记录按钮 */}
+              <button
+                onClick={() => navigate('/comparison-history')}
+                className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-all font-bold text-sm"
+              >
+                <History size={18} />
+                <span>范文历史</span>
+              </button>
+              
                 {/* 反馈按钮 */}
               <button
                 onClick={() => setFeedbackOpen(true)}
@@ -70,14 +72,6 @@ const Header: React.FC<HeaderProps> = ({
               >
                 <MessageSquare size={18} />
                 <span>意见反馈</span>
-              </button>
-
-              {/* 重置次数按钮（测试用） */}
-              <button
-                onClick={resetAttempts}
-                className="flex items-center gap-2 px-3 py-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all font-bold text-xs"
-              >
-                <span>重置次数</span>
               </button>
             </div>
             
@@ -112,6 +106,17 @@ const Header: React.FC<HeaderProps> = ({
             
             <button
               onClick={() => {
+                navigate('/comparison-history');
+                setMobileMenuOpen(false);
+              }}
+              className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-white border-2 border-slate-200 text-slate-700 rounded-xl font-bold"
+            >
+              <History size={18} />
+              <span>范文历史</span>
+            </button>
+
+            <button
+              onClick={() => {
                 setFeedbackOpen(true);
                 setMobileMenuOpen(false);
               }}
@@ -119,14 +124,6 @@ const Header: React.FC<HeaderProps> = ({
             >
               <MessageSquare size={18} />
               <span>意见反馈</span>
-            </button>
-
-            {/* 重置次数按钮（测试用） */}
-            <button
-              onClick={() => { resetAttempts(); setMobileMenuOpen(false); }}
-              className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold"
-            >
-              <span>重置次数</span>
             </button>
             
             {onExport && (

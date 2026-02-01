@@ -105,4 +105,35 @@ router.get('/:id', auth, async (req, res) => {
   }
 });
 
+// 更新作文标题
+router.patch('/:id/title', auth, async (req, res) => {
+  try {
+    const { title } = req.body;
+    
+    if (title === undefined || title === null) {
+      return res.status(400).json({ error: '标题不能为空' });
+    }
+
+    const trimmedTitle = title.trim();
+    if (trimmedTitle.length > 100) {
+      return res.status(400).json({ error: '标题长度不能超过100个字符' });
+    }
+
+    const essay = await Essay.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user.id },
+      { title: trimmedTitle, updatedAt: new Date() },
+      { new: true }
+    );
+
+    if (!essay) {
+      return res.status(404).json({ error: '作文不存在' });
+    }
+
+    res.json({ success: true, title: essay.title });
+  } catch (error) {
+    console.error('更新标题失败:', error);
+    res.status(500).json({ error: '更新标题失败' });
+  }
+});
+
 module.exports = router;

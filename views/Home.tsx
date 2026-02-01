@@ -15,7 +15,9 @@ import {
   Calendar,
   Award,
   Plus,
-  AlertCircle
+  AlertCircle,
+  Check,
+  Pencil
 } from 'lucide-react';
 import Header from '../components/Header';
 import { EssayRecord, GradeLevel } from '../types';
@@ -35,8 +37,11 @@ const Home: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [localHistory, setLocalHistory] = useState<EssayRecord[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState('');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const { canAnalyze, remainingAttempts, dailyLimit, recordAttempt } = useAuth();
 
@@ -113,7 +118,7 @@ const Home: React.FC = () => {
       
       // 分析流程：直接调用AI路由，存储在本地
         // Step 1: OCR识别
-        const ocrResponse = await fetch('http://localhost:5000/api/ai/ocr', {
+        const ocrResponse = await fetch('/api/ai/ocr', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ imageBase64: base64 })
@@ -147,7 +152,7 @@ const Home: React.FC = () => {
         navigate(`/result/${id}`);
         
         // Step 4: 后台进行AI分析（不影响用户阅读OCR内容）
-        fetch('http://localhost:5000/api/ai/analyze', {
+        fetch('/api/ai/analyze', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ text: rawText, essayId: id, gradeLevel: selectedGrade })
@@ -202,6 +207,44 @@ const Home: React.FC = () => {
     }
   };
 
+  const handleStartEdit = (id: string, currentTitle: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingId(id);
+    setEditingTitle(currentTitle);
+    // 聚焦输入框
+    setTimeout(() => {
+      titleInputRef.current?.focus();
+      titleInputRef.current?.select();
+    }, 0);
+  };
+
+  const handleSaveTitle = (id: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    const trimmedTitle = editingTitle.trim();
+    if (trimmedTitle && trimmedTitle !== localHistory.find(h => h.id === id)?.imageName) {
+      storage.updateEssay(id, { imageName: trimmedTitle });
+      setLocalHistory(storage.getEssays());
+    }
+    setEditingId(null);
+    setEditingTitle('');
+  };
+
+  const handleCancelEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingId(null);
+    setEditingTitle('');
+  };
+
+  const handleTitleKeyDown = (id: string, e: React.KeyboardEvent) => {
+    e.stopPropagation();
+    if (e.key === 'Enter') {
+      handleSaveTitle(id);
+    } else if (e.key === 'Escape') {
+      setEditingId(null);
+      setEditingTitle('');
+    }
+  };
+
   return (
     <div className="flex-1 bg-[#f8fafc] min-h-screen">
       <Header title="AI 英语名师批改系统" subTitle="测试版 - 仅供本校师生试用" />
@@ -223,7 +266,7 @@ const Home: React.FC = () => {
                   </div>
                   <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">上传新作文</h2>
                 </div>
-                <p className="text-slate-500 text-xs md:text-sm mb-4 md:mb-6 font-medium leading-relaxed">数字化您的批改流程，通过 AI 技术实现 24/7 全天候的专业英语作文反馈。</p>
+                <p className="text-slate-500 text-xs md:text-sm mb-4 md:mb-6 font-medium leading-relaxed">Hi～我是你的 AI 英语小助手！随时为你批改作文，帮你找出语法问题，让你的英语写作越来越棒 ✨</p>
 
                 {/* 年级选择器 */}
                 <div className="mb-4 md:mb-6">
@@ -248,16 +291,17 @@ const Home: React.FC = () => {
                 </div>
 
                 <div 
-                  className={`border-2 border-dashed rounded-2xl md:rounded-[2.5rem] p-6 md:p-10 flex flex-col items-center justify-center text-center transition-all min-h-[260px] md:min-h-[420px] relative overflow-hidden bg-white/50
+                  className={`border-2 border-dashed rounded-2xl md:rounded-[2.5rem] p-6 md:p-10 flex flex-col items-center justify-center text-center transition-all min-h-[260px] md:min-h-[420px] relative overflow-hidden bg-white/50 cursor-pointer
                     ${dragActive ? 'border-indigo-500 bg-indigo-50/80 scale-[0.98]' : 'border-slate-200 hover:border-indigo-400 hover:bg-slate-50/80'}`}
                   onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
                   onDragLeave={() => setDragActive(false)}
                   onDrop={(e) => { e.preventDefault(); setDragActive(false); if(e.dataTransfer.files[0]) handleFileChange(e.dataTransfer.files[0]); }}
+                  onClick={() => !previewUrl && fileInputRef.current?.click()}
                 >
-                  <input type="file" ref={fileInputRef} onChange={(e) => { if (e.target.files && e.target.files[0]) { handleFileChange(e.target.files[0]); e.target.value = ''; } }} className="hidden" accept="image/*" />
+                  <input type="file" ref={fileInputRef} onChange={(e) => { if (e.target.files && e.target.files[0]) { handleFileChange(e.target.files[0]); e.target.value = ''; } }} className="hidden" accept="image/*" onClick={(e) => e.stopPropagation()} />
                    
                   {!previewUrl ? (
-                    <div className="cursor-pointer group/upload" onClick={() => fileInputRef.current?.click()}>
+                    <div className="pointer-events-none group/upload">
                       <div className="w-20 h-20 md:w-28 md:h-28 ai-gradient-bg rounded-2xl md:rounded-[2.5rem] flex items-center justify-center text-white mx-auto mb-6 md:mb-10 shadow-2xl shadow-indigo-100 group-hover/upload:scale-110 group-hover/upload:rotate-3 transition-all duration-500">
                         <UploadCloud size={36} className="md:size-12" />
                       </div>
@@ -349,27 +393,73 @@ const Home: React.FC = () => {
                     
                     {/* 内容详情 */}
                     <div className="relative z-10 flex-1 min-w-0 py-1 md:py-2">
-                      <div className="flex items-center gap-2 md:gap-3 mb-2 md:mb-4">
-                        <div className="p-1 md:p-1.5 bg-indigo-50 rounded-lg text-indigo-600">
+                      <div className="flex items-start gap-2 md:gap-3 mb-2 md:mb-4">
+                        <div className="p-1 md:p-1.5 bg-indigo-50 rounded-lg text-indigo-600 flex-shrink-0 mt-0.5">
                           <FileText size={14} className="md:size-4" />
                         </div>
-                        <h4 className="font-black text-slate-800 text-sm md:text-xl truncate group-hover:text-indigo-600 transition-colors">
-                          {record.imageName}
-                        </h4>
+                        {editingId === record.id ? (
+                          <div className="flex-1 min-w-0" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center gap-2">
+                              <input
+                                ref={titleInputRef}
+                                type="text"
+                                value={editingTitle}
+                                onChange={(e) => setEditingTitle(e.target.value)}
+                                onKeyDown={(e) => handleTitleKeyDown(record.id, e)}
+                                className="flex-1 px-2 py-1 text-sm md:text-base font-bold text-slate-800 bg-white border-2 border-indigo-300 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                                maxLength={100}
+                              />
+                              <button
+                                onClick={(e) => handleSaveTitle(record.id, e)}
+                                className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                                title="保存"
+                              >
+                                <Check size={16} className="md:size-5" />
+                              </button>
+                              <button
+                                onClick={handleCancelEdit}
+                                className="p-1.5 text-slate-400 hover:bg-slate-100 rounded-lg transition-colors"
+                                title="取消"
+                              >
+                                <X size={16} className="md:size-5" />
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex-1 min-w-0 flex items-start gap-2 group/title">
+                             <h4 
+                               className="font-black text-slate-800 text-sm md:text-xl line-clamp-2 group-hover:text-indigo-600 transition-colors leading-snug cursor-pointer"
+                               title={record.imageName}
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 handleStartEdit(record.id, record.imageName, e);
+                               }}
+                             >
+                               {record.imageName}
+                             </h4>
+                            <button
+                              onClick={(e) => handleStartEdit(record.id, record.imageName, e)}
+                              className="p-1 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all opacity-0 group-hover/title:opacity-100 flex-shrink-0"
+                              title="修改标题"
+                            >
+                              <Pencil size={14} className="md:size-4" />
+                            </button>
+                          </div>
+                        )}
                       </div>
                        
                       <div className="flex flex-col gap-2 md:gap-4">
                         <div className="flex items-center gap-1 md:gap-2 text-xs md:text-sm font-bold text-slate-400">
-                          <Calendar size={12} className="md:size-4 text-slate-300" />
-                          <span>{new Date(record.createdAt).toLocaleDateString('zh-CN', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                          <Calendar size={12} className="md:size-4 text-slate-300 flex-shrink-0" />
+                          <span className="whitespace-nowrap">{new Date(record.createdAt).toLocaleDateString('zh-CN', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
                         </div>
                          
                         {record.result && (
                           <div className="flex items-center gap-2 md:gap-4">
-                            <div className="flex items-center gap-1 md:gap-2 px-2 md:px-4 py-1 md:py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-xs md:text-sm font-black shadow-sm ring-1 ring-emerald-100">
-                              <Award size={12} className="md:size-4" />
-                              <span>{record.result.totalScore}分</span>
-                            </div>
+                             <div className="flex items-center gap-1 md:gap-2 px-2 md:px-4 py-1 md:py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-xs md:text-sm font-black shadow-sm ring-1 ring-emerald-100 whitespace-nowrap">
+                               <Award size={12} className="md:size-4 flex-shrink-0" />
+                               <span className="whitespace-nowrap">{record.result.totalScore}分</span>
+                             </div>
                             <div className="text-[8px] md:text-[10px] text-slate-300 font-bold uppercase tracking-widest bg-slate-50 px-2 py-0.5 md:px-3 md:py-1 rounded-md">
                               #{record.id.slice(-4)}
                             </div>

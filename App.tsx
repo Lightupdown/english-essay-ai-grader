@@ -3,6 +3,7 @@ import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import Home from './views/Home';
 import Result from './views/Result';
 import Comparison from './views/Comparison';
+import ComparisonHistory from './views/ComparisonHistory';
 import { AuthProvider } from './contexts/AuthContext';
 
 const AppContent: React.FC = () => {
@@ -12,6 +13,7 @@ const AppContent: React.FC = () => {
         <Route path="/" element={<Home />} />
         <Route path="/result/:id" element={<Result />} />
         <Route path="/comparison/:id" element={<Comparison />} />
+        <Route path="/comparison-history" element={<ComparisonHistory />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       

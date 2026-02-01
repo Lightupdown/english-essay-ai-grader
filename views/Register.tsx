@@ -75,7 +75,7 @@ const Register: React.FC = () => {
               <div className="group">
                 <label className="block text-xs md:text-sm font-bold text-slate-700 mb-1 md:mb-2 pl-1">邮箱地址</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 md:left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors" size={16} className="md:size-5" />
+                  <Mail className="absolute left-3 md:left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors md:size-5" size={16} />
                   <input
                     type="email"
                     value={email}
@@ -94,7 +94,7 @@ const Register: React.FC = () => {
                   姓名 <span className="text-slate-400 font-normal">（可选）</span>
                 </label>
                 <div className="relative">
-                  <User className="absolute left-3 md:left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors" size={16} className="md:size-5" />
+                  <User className="absolute left-3 md:left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors md:size-5" size={16} />
                   <input
                     type="text"
                     value={name}
@@ -110,7 +110,7 @@ const Register: React.FC = () => {
               <div className="group">
                 <label className="block text-xs md:text-sm font-bold text-slate-700 mb-1 md:mb-2 pl-1">密码（至少6位）</label>
                 <div className="relative">
-                  <Lock className="absolute left-3 md:left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors" size={16} className="md:size-5" />
+                  <Lock className="absolute left-3 md:left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors md:size-5" size={16} />
                   <input
                     type="password"
                     value={password}
@@ -127,7 +127,7 @@ const Register: React.FC = () => {
               <div className="group">
                 <label className="block text-xs md:text-sm font-bold text-slate-700 mb-1 md:mb-2 pl-1">确认密码</label>
                 <div className="relative">
-                  <Lock className="absolute left-3 md:left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors" size={16} className="md:size-5" />
+                  <Lock className="absolute left-3 md:left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors md:size-5" size={16} />
                   <input
                     type="password"
                     value={confirmPassword}
